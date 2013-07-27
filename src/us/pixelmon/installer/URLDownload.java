@@ -20,7 +20,7 @@ public class URLDownload {
     
     public void download(String pathToDownloadTo) throws IOException {
         URLDownload.download(this.url, new File(pathToDownloadTo));
-    e
+    }
     
     /**
      * Use this to actually download the from a url

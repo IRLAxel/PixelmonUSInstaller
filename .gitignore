@@ -1,1 +1,4 @@
-bin
+bin/
+jar/
+lib
+javasrc.list

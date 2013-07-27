@@ -4,30 +4,31 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.CopyOption;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.model.FileHeader;
+import net.lingala.zip4j.model.UnzipParameters;
+import net.lingala.zip4j.model.ZipParameters;
 
 public class Installer {
     private Map<URL, File> urlToFile;
     private Map<Description, File> descriptionToFile;
     private String configDir; //path in the jar
     private File downloadDir;
-    private File minecraftDirToMake;
     private File tmpDir;
     
-    public Installer(File downloadDir, File minecraftDirToMake, File tmpDir) {
+    public Installer(File downloadDir, File tmpDir) {
         this.configDir = "config/";
         this.downloadDir = downloadDir;
-        this.minecraftDirToMake = minecraftDirToMake;
         this.tmpDir = tmpDir;
         
         urlToFile = populateURLs();
@@ -47,6 +48,23 @@ public class Installer {
             
             if (file.exists()) {
                 System.out.println("\"" + file.getName() + "\" already exists. Skipping it...");
+                
+                if (fileName.toLowerCase().contains("minecraft") &&
+                    fileName.toLowerCase().contains(".jar") &&
+                    !fileName.toLowerCase().contains("forge")) {
+                    this.descriptionToFile.put(Description.MINECRAFTJAR, file);
+                }
+                else if (fileName.toLowerCase().contains("minecraftforge-universal")) {
+                    this.descriptionToFile.put(Description.MINECRAFTFORGEJAR, file);
+                }
+                else if (fileName.toLowerCase().contains("customnpcs")) {
+                    this.descriptionToFile.put(Description.CUSTOMNPCSZIP, file);
+                }
+                else if (fileName.toLowerCase().contains("pixelmon")) {
+                    this.descriptionToFile.put(Description.PIXELMONINSTALLZIP, file);
+                }
+                
+                continue;
             }
             
             try {
@@ -78,32 +96,58 @@ public class Installer {
         return true;
     }
     
-    public void runMinecraftInitial() {
-        Runtime r = Runtime.getRuntime();
-        String originalPath = (new File(".").getAbsolutePath());
-        
-        //make the minecraft directory
-        if (!this.minecraftDirToMake.exists()) {
-            this.minecraftDirToMake.mkdir();
+    /**
+     * 
+     * @param runIfMcJarExists Whether to run minecraft even if .minecraft/minecraft.jar
+     * already exists 
+     */
+    public void runMinecraft(boolean runIfMcJarExists) {
+        String baseDir;
+        if (Utils.isWindows()) {
+            baseDir = System.getenv("APPDATA");
+        }
+        else {
+            baseDir = System.getenv("HOME");
+        }
+        File mcGameJar = new File(baseDir, "minecraft.jar");
+        if (!runIfMcJarExists ) {
+            if (mcGameJar.exists()) {
+                System.out.println("No need to run minecraft.jar launcher; it has already been run successfully!");
+                return;
+            }
         }
         
-        Path downloadedJar = (new File(this.downloadDir, "minecraft.jar")).toPath();
-        Path newJar = (new File(this.minecraftDirToMake, "minecraft.jar")).toPath();
+        File downloadedJar = descriptionToFile.get(Description.MINECRAFTJAR);
+        Runtime r = Runtime.getRuntime();
+        Process run = null;
         
         try {
-            Files.copy(downloadedJar, newJar, StandardCopyOption.REPLACE_EXISTING);
-            
-            String[] commands = {"cd " + this.minecraftDirToMake,
-                                 "java -jar minecraft.jar"};
-            r.exec(commands);
-        } catch (IOException e) {
+            run = r.exec("java -jar " + downloadedJar.getAbsolutePath());
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
+        Scanner runStd = new Scanner(run.getInputStream());
+        Scanner runErr = new Scanner (run.getErrorStream());
+        
+        while (true) {
+            if (runStd.hasNext()) {
+                System.out.println(runStd.nextLine());
+            }
+            if (runErr.hasNext()) {
+                System.err.println(runErr.nextLine());
+            }
+            else {
+                break;
+            }
+        }
+        runStd.close();
+        runErr.close();
     }
     
     public void patchMinecraftJar() {
+        System.out.println("Patching minecraft.jar...");
         try {
-            ZipFile mcJar;
             String baseDir;
             if (Utils.isWindows()) {
                 baseDir = System.getenv("APPDATA");
@@ -112,23 +156,35 @@ public class Installer {
                 baseDir = System.getenv("HOME");
             }
             
-            mcJar = new ZipFile(new File(baseDir, ".minecraft/bin/minecraft.jar"));
+            ZipFile mcJarOrig = new ZipFile(new File(baseDir, ".minecraft/bin/minecraft.jar"));
+            ZipFile mcForgeJar = new ZipFile(descriptionToFile.get(Description.MINECRAFTFORGEJAR));
             
-            ZipFile forgeZip = new ZipFile(this.descriptionToFile.get(Description.MINECRAFTFORGEJAR));
+            //we will extract everything and then make a new jar.
+            //unzip mcForgeJar second to overwrite the minecraft files necessary.
+            mcJarOrig.extractAll(tmpDir.getAbsolutePath());
+            Utils.deleteRecursive(new File(tmpDir, "META-INF"));
+            mcForgeJar.extractAll(tmpDir.getAbsolutePath());
             
+            File mcJarNewFile = new File(tmpDir, "minecraft.jar");
+            if (mcJarNewFile.exists()) {
+                mcJarNewFile.delete();
+            }
+            ZipFile mcJarNew = new ZipFile(mcJarNewFile);
+            ZipParameters mcJarNewParam = new ZipParameters();
+            mcJarNewParam.setIncludeRootFolder(false);
+            mcJarNew.addFolder(tmpDir, mcJarNewParam);
             
-/*          String extractedPath = this.tmpDir.getAbsolutePath() + "/" + forgeZip.getFile().getAbsolutePath().replace(".zip", "");
-            forgeZip.extractAll(extractedPath);
-            
-            ZipParameters p = new ZipParameters();
-            p.setIncludeRootFolder(false);
-            mcJar.addFolder(extractedPath, );*/
+            //move original minecraft jar to tmp and move the new to .minecraft
+            Files.copy(mcJarOrig.getFile().toPath(), new File(tmpDir, "minecraft-orig-mojang.jar").toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(mcJarNew.getFile().toPath(), mcJarOrig.getFile().toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
         catch (ZipException e) {
             System.err.println("There was an error patching the minecraft jar, specifically with zip utils.");
             e.printStackTrace();
         }
-        
+        catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     private Map<URL, File> populateURLs() {
         Map<URL, File> map = new HashMap<URL, File>();
