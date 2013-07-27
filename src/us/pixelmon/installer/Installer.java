@@ -4,24 +4,21 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.CopyOption;
-import java.nio.file.FileVisitOption;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.model.FileHeader;
-import net.lingala.zip4j.model.UnzipParameters;
 import net.lingala.zip4j.model.ZipParameters;
 
 public class Installer {
     private Map<URL, File> urlToFile;
-    private Map<Description, File> descriptionToFile;
+    private Map<FileDescription, File> descriptionToFile;
     private String configDir; //path in the jar
     private File downloadDir;
     private File tmpDir;
@@ -32,7 +29,7 @@ public class Installer {
         this.tmpDir = tmpDir;
         
         urlToFile = populateURLs();
-        descriptionToFile = new HashMap<Description, File>();
+        descriptionToFile = new HashMap<FileDescription, File>();
     }
     
     /**
@@ -52,43 +49,43 @@ public class Installer {
                 if (fileName.toLowerCase().contains("minecraft") &&
                     fileName.toLowerCase().contains(".jar") &&
                     !fileName.toLowerCase().contains("forge")) {
-                    this.descriptionToFile.put(Description.MINECRAFTJAR, file);
+                    this.descriptionToFile.put(FileDescription.MINECRAFTJAR, file);
                 }
                 else if (fileName.toLowerCase().contains("minecraftforge-universal")) {
-                    this.descriptionToFile.put(Description.MINECRAFTFORGEJAR, file);
+                    this.descriptionToFile.put(FileDescription.MINECRAFTFORGEJAR, file);
                 }
                 else if (fileName.toLowerCase().contains("customnpcs")) {
-                    this.descriptionToFile.put(Description.CUSTOMNPCSZIP, file);
+                    this.descriptionToFile.put(FileDescription.CUSTOMNPCSZIP, file);
                 }
                 else if (fileName.toLowerCase().contains("pixelmon")) {
-                    this.descriptionToFile.put(Description.PIXELMONINSTALLZIP, file);
+                    this.descriptionToFile.put(FileDescription.PIXELMONINSTALLZIP, file);
                 }
                 
                 continue;
             }
             
             try {
-                System.out.println("Downloading \"" + url.toString() + "\"...");
+                System.out.println("Downloading " + url.toString() + "...");
                 URLDownload.download(url, file);
                 
                 if (fileName.toLowerCase().contains("minecraft") &&
                     fileName.toLowerCase().contains(".jar") &&
                     !fileName.toLowerCase().contains("forge")) {
-                    this.descriptionToFile.put(Description.MINECRAFTFORGEJAR, file);
+                    this.descriptionToFile.put(FileDescription.MINECRAFTJAR, file);
                 }
                 else if (fileName.toLowerCase().contains("minecraftforge-universal")) {
-                    this.descriptionToFile.put(Description.MINECRAFTFORGEJAR, file);
+                    this.descriptionToFile.put(FileDescription.MINECRAFTFORGEJAR, file);
                 }
                 else if (fileName.toLowerCase().contains("customnpcs")) {
-                    this.descriptionToFile.put(Description.CUSTOMNPCSZIP, file);
+                    this.descriptionToFile.put(FileDescription.CUSTOMNPCSZIP, file);
                 }
                 else if (fileName.toLowerCase().contains("pixelmon")) {
-                    this.descriptionToFile.put(Description.PIXELMONINSTALLZIP, file);
+                    this.descriptionToFile.put(FileDescription.PIXELMONINSTALLZIP, file);
                 }
                 
                 System.out.println("Download successful!");
             } catch (IOException e) {
-                System.err.println("There was an error downloading file \"" + url.toString() + "\"");
+                System.err.println("There was an error downloading file " + url.toString() + "");
                 e.printStackTrace();
                 return false;
             }
@@ -109,15 +106,15 @@ public class Installer {
         else {
             baseDir = System.getenv("HOME");
         }
-        File mcGameJar = new File(baseDir, "minecraft.jar");
-        if (!runIfMcJarExists ) {
+        File mcGameJar = new File(baseDir, ".minecraft/bin/minecraft.jar");
+        if (!runIfMcJarExists) {
             if (mcGameJar.exists()) {
                 System.out.println("No need to run minecraft.jar launcher; it has already been run successfully!");
                 return;
             }
         }
         
-        File downloadedJar = descriptionToFile.get(Description.MINECRAFTJAR);
+        File downloadedJar = descriptionToFile.get(FileDescription.MINECRAFTJAR);
         Runtime r = Runtime.getRuntime();
         Process run = null;
         
@@ -155,9 +152,8 @@ public class Installer {
             else {
                 baseDir = System.getenv("HOME");
             }
-            
             ZipFile mcJarOrig = new ZipFile(new File(baseDir, ".minecraft/bin/minecraft.jar"));
-            ZipFile mcForgeJar = new ZipFile(descriptionToFile.get(Description.MINECRAFTFORGEJAR));
+            ZipFile mcForgeJar = new ZipFile(descriptionToFile.get(FileDescription.MINECRAFTFORGEJAR));
             
             //we will extract everything and then make a new jar.
             //unzip mcForgeJar second to overwrite the minecraft files necessary.
@@ -186,6 +182,63 @@ public class Installer {
             e.printStackTrace();
         }
     }
+    
+    /**
+     * Call this AFTER you patch with patchMinecraftJar()
+     */
+    public void addModsAndCoremods() {
+        File mcRootDir;
+        File modsDir;
+        File coremodsDir;
+        String baseDir;
+        if (Utils.isWindows()) {
+            baseDir = System.getenv("APPDATA");
+        }
+        else {
+            baseDir = System.getenv("HOME");
+        }
+        mcRootDir = new File(baseDir, ".minecraft");
+        modsDir = new File(mcRootDir, "mods");
+        coremodsDir = new File(mcRootDir, "coremods");
+        
+        if (!mcRootDir.exists()) {
+            System.err.println("The folder " + mcRootDir.getAbsolutePath() + " doesn't exist.");
+            return;
+        }
+        Utils.mkdir(modsDir); Utils.mkdir(coremodsDir);
+        
+        for (FileDescription desc : this.descriptionToFile.keySet()) {
+            File jarOrZip = this.descriptionToFile.get(desc);
+            
+            if (desc.shouldExtractToRootMCDir()) {
+                try {
+                    ZipFile zipToExtract = new ZipFile(jarOrZip);
+                    zipToExtract.extractAll(mcRootDir.getAbsolutePath());
+                }
+                catch (ZipException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            if (desc.isMCForgeMod()) {
+                try {
+                Files.copy(jarOrZip.toPath(), new File(modsDir, jarOrZip.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            else if (desc.isMCForgeCoreMod()) {
+                try {
+                    Files.copy(jarOrZip.toPath(), new File(coremodsDir, jarOrZip.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    
     private Map<URL, File> populateURLs() {
         Map<URL, File> map = new HashMap<URL, File>();
         

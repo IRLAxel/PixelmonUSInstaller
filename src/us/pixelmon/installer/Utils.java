@@ -48,4 +48,10 @@ public class Utils {
             }
         }
     }
+    
+    public static void mkdir(File f) {
+        if (!f.exists()) {
+            f.mkdir();
+        }
+    }
 }

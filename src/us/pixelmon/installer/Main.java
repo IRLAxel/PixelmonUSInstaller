@@ -10,18 +10,13 @@ public class Main {
     public static void main(String args[]) {
         System.setProperty("java.net.preferIPv4Stack" , "true");
         
-        mkdir(installerDataRoot); mkdir(downloadDir); mkdir(tmpDir);
+        Utils.mkdir(installerDataRoot); Utils.mkdir(downloadDir); Utils.mkdir(tmpDir);
         
         Installer installer = new Installer(downloadDir, tmpDir);
         installer.downloadFiles();
         installer.runMinecraft(false);
         installer.patchMinecraftJar();
+        installer.addModsAndCoremods();
         installer.runMinecraft(true);
-    }
-    
-    private static void mkdir(File f) {
-        if (!f.exists()) {
-            f.mkdir();
-        }
     }
 }
