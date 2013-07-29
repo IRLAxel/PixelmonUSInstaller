@@ -2,7 +2,7 @@
 ## Use this script to build and compile a java project
 
 ## Jar options
-JARVERSION="0.1"
+JARVERSION="0.2"
 JARNAME="PixelmonUSInstaller"
 MAINCLASS="us.pixelmon.installer.Main"
 

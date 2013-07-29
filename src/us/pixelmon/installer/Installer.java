@@ -9,8 +9,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
@@ -259,5 +257,11 @@ public class Installer {
         }
         s.close();
         return map;
+    }
+
+    //getters
+
+    public Map<URL, File> getUrlToFile() {
+        return urlToFile;
     }
 }
