@@ -1,7 +1,8 @@
 package us.pixelmon.installer;
 
 import java.io.File;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
+
 import us.pixelmon.installer.gui.InstallerGui;
 
 public class Main {
@@ -10,17 +11,20 @@ public class Main {
     public static final File tmpDir      =          new File(installerDataRoot, "./tmp");
     
     public static void main(String args[]) {
+        //To be safe, donwload ipv4
         System.setProperty("java.net.preferIPv4Stack" , "true");
+
+        //make it prettier
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        }
+        catch (Exception e) {
+            System.err.println("There was an error with the look and feel. Resorting to default.");
+        }
         
         Utils.mkdir(installerDataRoot); Utils.mkdir(downloadDir); Utils.mkdir(tmpDir);
-        Installer installer = new Installer(downloadDir, tmpDir);
+        Installer installer = new Installer(downloadDir, tmpDir, true);
 
         SwingUtilities.invokeLater(new InstallerGui(installer));
-        //Installer installer = new Installer(downloadDir, tmpDir);
-        //installer.downloadFiles();
-        //installer.runMinecraft(false);
-        //installer.patchMinecraftJar();
-        //installer.addModsAndCoremods();
-        //installer.runMinecraft(true);
     }
 }

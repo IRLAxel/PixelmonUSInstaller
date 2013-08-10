@@ -1,0 +1,236 @@
+package us.pixelmon.installer.gui;
+
+import us.pixelmon.installer.Installer;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+public class InstallerFrame extends JFrame {
+    private Installer installer;
+    private GridLayout layout;
+    public InstallerFrame(String title, Installer installer) {
+        super(title);
+        this.installer = installer;
+        this.layout = new GridLayout(3, 1, 5, 5);
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(layout);
+        setSize(500, 400);
+    }
+
+    public void begin() {
+        startWelcome();
+    }
+
+    /*
+     * Draws the welcome screen
+     */
+    public void startWelcome() {
+        JLabel mainText = new JLabel("<html><h1><b>Welcome!</b></h1>This installer will automatically download " +
+                "all of the resources necessary for Pixelmon.us! It will also automatically patch " +
+                "your minecraft.jar. When this installer is done, you will be ready to log on " +
+                "to Pixelmon.us!</h3>");
+        JButton cont = new JButton("Continue");
+        cont.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                startDownload();
+            }
+        });
+
+        //this panel is the last row in the frame
+        JPanel third = new JPanel();
+        third.setLayout(new GridLayout(1, 3));
+        //1                         //2                     //3
+        third.add(new JPanel()); third.add(new JPanel()); third.add(cont);
+
+        //populate the grid; a little confusing to read
+        getContentPane().add(mainText);
+        getContentPane().add(new JPanel());
+        getContentPane().add(third);
+    }
+
+    /*
+     * Handles downloading the files
+     */
+    public void startDownload() {
+        clearAll();
+        final JLabel statusText = new JLabel("<html><center><b>Downloading Files...");
+
+        final JButton cont = new JButton("Continue");
+        cont.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                initMinecraft(false);
+            }
+        });
+
+        final JProgressBar progress = new JProgressBar(1, 100);
+        progress.setIndeterminate(true);
+        progress.setStringPainted(true);
+        progress.setString("Downloading...");
+
+        getContentPane().add(statusText);
+        getContentPane().add(progress);
+        update();
+
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                installer.downloadFiles();
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                statusText.setText("<html><h1 \"style=text-align:center\"><b>Done Downloading!");
+                progress.setIndeterminate(false);
+                progress.setString("Done!");
+                progress.setValue(100);
+
+                JPanel third = new JPanel();
+                third.setLayout(new GridLayout(1, 3));
+                third.add(new JPanel()); third.add(new JPanel()); third.add(cont);
+                getContentPane().add(third);
+            }
+        };
+        worker.execute();
+    }
+
+    /**
+     * Starts minecraft in a worker thread depending on the patched status for different text
+     * @param alreadyPatched
+     */
+    void initMinecraft(boolean alreadyPatched) {
+        clearAll();
+
+        final JLabel infoText;
+        final JButton proceed = new JButton("<html>Proceed/Run Minecraft");
+        if (alreadyPatched) {
+            infoText = new JLabel("<html>Minecraft will now start. It should now be fully modded. Check" +
+                                  "for the \"mods\" option once you get to the main screen. If you see it and" +
+                                  "it shows Pixelmon and CustomNPCs, we are done!");
+            proceed.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    proceed.setEnabled(false);
+                    SwingWorker<Void, Void> runMc = new SwingWorker<Void, Void>() {
+                        @Override
+                        protected Void doInBackground() throws Exception {
+                            installer.runMinecraft(true);
+
+                            return null;
+                        }
+
+                        @Override
+                        protected void done() {
+                            startCompleted();
+                        }
+                    };
+                    runMc.execute();
+                }
+            });
+        }
+        else {
+            infoText = new JLabel("<html>Minecraft will now run once unmodded. This will let minecraft " +
+                                  "download all necessary files before patching the jar with MinecraftForge. " +
+                                  "If the files necessary are already there, we will just proceed.");
+            proceed.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    proceed.setEnabled(false);
+                    SwingWorker<Void, Void> runMc = new SwingWorker<Void, Void>() {
+                        @Override
+                        protected Void doInBackground() throws Exception {
+                            installer.runMinecraft(false);
+
+                            return null;
+                        }
+
+                        @Override
+                        protected void done() {
+                            startPatching();
+                        }
+                    };
+                    runMc.execute();
+                }
+            });
+        }
+        getContentPane().add(infoText);
+        getContentPane().add(new JPanel());
+
+        JPanel third = new JPanel(new GridLayout(1, 3));
+        third.add(new JPanel()); third.add(new JPanel()); third.add(proceed);
+
+        getContentPane().add(third);
+        update();
+    }
+
+    /*
+     * Handles patching the new jar
+     */
+    public void startPatching() {
+        clearAll();
+        final JLabel info = new JLabel("<html><h1>Patching the jar...");
+        final JProgressBar progress = new JProgressBar(1, 100);
+        progress.setIndeterminate(true);
+        progress.setStringPainted(true);
+        progress.setString("Patching Minecraft");
+
+        getContentPane().add(info);
+        getContentPane().add(progress);
+        update();
+
+        SwingWorker<Void, Void> patchWorker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                installer.patchMinecraftJar();
+                installer.addModsAndCoremods();
+                initMinecraft(true);
+
+                return null;
+            }
+        };
+        patchWorker.execute();
+    }
+
+    public void startCompleted() {
+        clearAll();
+        JLabel finishedText = new JLabel("<html><h1><b>Installation Complete!</b></h1>Minecraft should now be fully " +
+                                         "modded. Check for the \"mods\" option once you get to the main screen. If " +
+                                         "you see it and it shows Pixelmon and CustomNPCs, we are done!");
+        JButton close = new JButton("Exit");
+        close.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+
+        JPanel third = new JPanel(new GridLayout());
+        third.add(new JPanel()); third.add(new JPanel()); third.add(close);
+
+        getContentPane().add(finishedText);
+        getContentPane().add(new JPanel());
+        getContentPane().add(third);
+        update();
+    }
+    /*
+     * Some utility methods
+     */
+    private void update() {
+        revalidate();
+        repaint();
+    }
+    private void clearAll() {
+        getContentPane().removeAll();
+        update();
+    }
+}

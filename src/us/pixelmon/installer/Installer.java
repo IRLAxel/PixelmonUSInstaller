@@ -1,5 +1,8 @@
 package us.pixelmon.installer;
 
+import net.java.truevfs.access.TFile;
+import net.java.truevfs.access.TVFS;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -10,21 +13,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.model.ZipParameters;
-
 public class Installer {
     private Map<URL, File> urlToFile;
     private Map<FileDescription, File> descriptionToFile;
     private String configDir; //path in the jar
     private File downloadDir;
     private File tmpDir;
-    
+    private boolean runningFromGUI;
+
+    public Installer(File downloadDir, File tmpDir, boolean runningFromGUI) {
+        this (downloadDir, tmpDir);
+        this.runningFromGUI = runningFromGUI;
+    }
+
     public Installer(File downloadDir, File tmpDir) {
         this.configDir = "config/";
         this.downloadDir = downloadDir;
         this.tmpDir = tmpDir;
+        this.runningFromGUI = false;
         
         urlToFile = populateURLs();
         descriptionToFile = new HashMap<FileDescription, File>();
@@ -88,6 +94,7 @@ public class Installer {
                 return false;
             }
         }
+
         return true;
     }
     
@@ -150,31 +157,17 @@ public class Installer {
             else {
                 baseDir = System.getenv("HOME");
             }
-            ZipFile mcJarOrig = new ZipFile(new File(baseDir, ".minecraft/bin/minecraft.jar"));
-            ZipFile mcForgeJar = new ZipFile(descriptionToFile.get(FileDescription.MINECRAFTFORGEJAR));
+            TFile mcJarOrig = new TFile(baseDir, ".minecraft/bin/minecraft.jar");
+            TFile mcForgeJar = new TFile(descriptionToFile.get(FileDescription.MINECRAFTFORGEJAR));
             
-            //we will extract everything and then make a new jar.
-            //unzip mcForgeJar second to overwrite the minecraft files necessary.
-            mcJarOrig.extractAll(tmpDir.getAbsolutePath());
-            Utils.deleteRecursive(new File(tmpDir, "META-INF"));
-            mcForgeJar.extractAll(tmpDir.getAbsolutePath());
-            
-            File mcJarNewFile = new File(tmpDir, "minecraft.jar");
-            if (mcJarNewFile.exists()) {
-                mcJarNewFile.delete();
-            }
-            ZipFile mcJarNew = new ZipFile(mcJarNewFile);
-            ZipParameters mcJarNewParam = new ZipParameters();
-            mcJarNewParam.setIncludeRootFolder(false);
-            mcJarNew.addFolder(tmpDir, mcJarNewParam);
-            
-            //move original minecraft jar to tmp and move the new to .minecraft
-            Files.copy(mcJarOrig.getFile().toPath(), new File(tmpDir, "minecraft-orig-mojang.jar").toPath(), StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(mcJarNew.getFile().toPath(), mcJarOrig.getFile().toPath(), StandardCopyOption.REPLACE_EXISTING);
-        }
-        catch (ZipException e) {
-            System.err.println("There was an error patching the minecraft jar, specifically with zip utils.");
-            e.printStackTrace();
+            //delete META-INF from minecraft jar
+            new TFile(mcJarOrig, "META-INF").rm_r();
+
+            //patch the jar and overwrite
+            mcForgeJar.cp_r(mcJarOrig);
+
+            //update it all
+            TVFS.umount();
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -210,10 +203,10 @@ public class Installer {
             
             if (desc.shouldExtractToRootMCDir()) {
                 try {
-                    ZipFile zipToExtract = new ZipFile(jarOrZip);
-                    zipToExtract.extractAll(mcRootDir.getAbsolutePath());
+                    TFile zipToExtract = new TFile(jarOrZip);
+                    zipToExtract.cp_rp(mcRootDir);
                 }
-                catch (ZipException e) {
+                catch (IOException e) {
                     e.printStackTrace();
                 }
             }
@@ -234,6 +227,13 @@ public class Installer {
                     e.printStackTrace();
                 }
             }
+        }
+        //update it all
+        try {
+            TVFS.umount();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
         }
     }
     
