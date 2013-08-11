@@ -1,17 +1,19 @@
 package us.pixelmon.installer;
 
-import net.java.truevfs.access.TFile;
-import net.java.truevfs.access.TVFS;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.zip.ZipEntry;
+
+import us.pixelmon.installer.util.Utils;
 
 public class Installer {
     private Map<URL, File> urlToFile;
@@ -157,7 +159,7 @@ public class Installer {
             else {
                 baseDir = System.getenv("HOME");
             }
-            TFile mcJarOrig = new TFile(baseDir, ".minecraft/bin/minecraft.jar");
+            /*TFile mcJarOrig = new TFile(baseDir, ".minecraft/bin/minecraft.jar");
             TFile mcForgeJar = new TFile(descriptionToFile.get(FileDescription.MINECRAFTFORGEJAR));
             
             //delete META-INF from minecraft jar
@@ -167,7 +169,16 @@ public class Installer {
             mcForgeJar.cp_r(mcJarOrig);
 
             //update it all
-            TVFS.umount();
+            TVFS.umount();*/
+            
+            File mcJarOrig = new File(baseDir, ".minecraft/bin/minecraft.jar");
+            File mcForgeJar = descriptionToFile.get(FileDescription.MINECRAFTFORGEJAR);
+            
+            List<ZipEntry> toDelete = new ArrayList<ZipEntry>(1);
+            toDelete.add(new ZipEntry("META-INF"));
+            
+            Utils.deleteEntriesFromZip(mcJarOrig, toDelete);
+            Utils.zip_cp_r(mcForgeJar, mcJarOrig);
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -203,8 +214,9 @@ public class Installer {
             
             if (desc.shouldExtractToRootMCDir()) {
                 try {
-                    TFile zipToExtract = new TFile(jarOrZip);
-                    zipToExtract.cp_rp(mcRootDir);
+//                    TFile zipToExtract = new TFile(jarOrZip);
+//                    zipToExtract.cp_rp(mcRootDir);
+                    Utils.unzip(jarOrZip, mcRootDir);
                 }
                 catch (IOException e) {
                     e.printStackTrace();
@@ -227,13 +239,6 @@ public class Installer {
                     e.printStackTrace();
                 }
             }
-        }
-        //update it all
-        try {
-            TVFS.umount();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
         }
     }
     

@@ -1,9 +1,11 @@
 package us.pixelmon.installer;
 
 import java.io.File;
+
 import javax.swing.*;
 
 import us.pixelmon.installer.gui.InstallerGui;
+import us.pixelmon.installer.util.Utils;
 
 public class Main {
     public static final File installerDataRoot =    new File("./.installerdata");
