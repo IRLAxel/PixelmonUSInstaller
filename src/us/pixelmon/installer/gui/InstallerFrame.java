@@ -1,16 +1,17 @@
 package us.pixelmon.installer.gui;
 
-import us.pixelmon.installer.Installer;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.SwingWorker;
+
+import us.pixelmon.installer.Installer;
 
 public class InstallerFrame extends JFrame {
     private Installer installer;
@@ -34,9 +35,9 @@ public class InstallerFrame extends JFrame {
      */
     public void startWelcome() {
         JLabel mainText = new JLabel("<html><h1><b>Welcome!</b></h1>This installer will automatically download " +
-                "all of the resources necessary for Pixelmon.us! It will also automatically patch " +
-                "your minecraft.jar. When this installer is done, you will be ready to log on " +
-                "to Pixelmon.us!</h3>");
+                                     "all of the resources necessary for Pixelmon.us! It will also automatically patch " +
+                                     "your minecraft.jar. When this installer is done, you will be ready to log on " +
+                                     "to Pixelmon.us!</h3>");
         JButton cont = new JButton("Continue");
         cont.addActionListener(new ActionListener() {
             @Override
@@ -114,9 +115,9 @@ public class InstallerFrame extends JFrame {
         final JLabel infoText;
         final JButton proceed = new JButton("<html>Proceed/Run Minecraft");
         if (alreadyPatched) {
-            infoText = new JLabel("<html>Minecraft will now start. It should now be fully modded. Check" +
-                                  "for the \"mods\" option once you get to the main screen. If you see it and" +
-                                  "it shows Pixelmon and CustomNPCs, we are done!");
+            infoText = new JLabel("<html>Minecraft will now start. It should now be fully modded. Check " +
+                                  "for the \"mods\" option once you get to the main screen after logging in." +
+                                  " If you see it and it shows Pixelmon and CustomNPCs, we are done!");
             proceed.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -141,7 +142,8 @@ public class InstallerFrame extends JFrame {
         else {
             infoText = new JLabel("<html>Minecraft will now run once unmodded. This will let minecraft " +
                                   "download all necessary files before patching the jar with MinecraftForge. " +
-                                  "If the files necessary are already there, we will just proceed.");
+                                  "<br /><br />When you get to the main Minecraft screen, exit Minecraft! If " +
+                                  "the files necessary are already there, we will just proceed.");
             proceed.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
