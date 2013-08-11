@@ -2,3 +2,4 @@ bin/
 jar/
 lib
 javasrc.list
+.installerdata

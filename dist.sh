@@ -16,8 +16,7 @@ JARDIR=$BASEDIR/jar
 
 ## Array of other files you want added to the jar (ie library classes)
 ADDTOJAR=("${ADDTOJAR[@]}"
-          "$SRCDIR/config"
-          "$LIBDIR/net")
+          "$SRCDIR/config")
 
 ## Formatting
 _uf="\e[0m"         ##unformat clears formatting
