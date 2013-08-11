@@ -7,7 +7,8 @@ JARNAME="PixelmonUSInstaller"
 MAINCLASS="us.pixelmon.installer.Main"
 
 ## Path options
-BASEDIR=/home/aaron/repo/github/aabmass/PixelmonUSInstaller
+#BASEDIR=/home/aaron/repo/github/aabmass/PixelmonUSInstaller
+BASEDIR=`pwd`
 LISTFILE=$BASEDIR/javasrc.list
 LIBDIR=$BASEDIR/lib
 SRCDIR=$BASEDIR/src
