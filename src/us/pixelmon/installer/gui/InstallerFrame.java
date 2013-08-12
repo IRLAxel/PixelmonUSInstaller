@@ -232,8 +232,7 @@ public class InstallerFrame extends JFrame {
     public void startCompleted() {
         clearAll();
         JLabel finishedText = new JLabel("<html><h1><b>Installation Complete!</b></h1>Minecraft should now be fully " +
-                                         "modded. Check for the \"mods\" option once you get to the main screen. If " +
-                                         "you see it and it shows Pixelmon and CustomNPCs, we are done!");
+                                         "modded. Just start this program again and choose \"Launch Minecraft\" to play");
         JButton close = new JButton("Exit");
         close.addActionListener(new ActionListener() {
             @Override
