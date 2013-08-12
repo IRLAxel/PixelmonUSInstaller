@@ -232,7 +232,8 @@ public class InstallerFrame extends JFrame {
     public void startCompleted() {
         clearAll();
         JLabel finishedText = new JLabel("<html><h1><b>Installation Complete!</b></h1>Minecraft should now be fully " +
-                                         "modded. Just start this program again and choose \"Launch Minecraft\" to play");
+                                         "modded. Just start this program again and choose \"Launch Minecraft\" to play" +
+                                         ". Login, choose \"Multiplayer\" and add our server at address \"pixelmon.us\".");
         JButton close = new JButton("Exit");
         close.addActionListener(new ActionListener() {
             @Override
@@ -240,12 +241,16 @@ public class InstallerFrame extends JFrame {
                 System.exit(0);
             }
         });
-
+        
+        JLabel second = new JLabel("<html>We also installed our Custom Texture Pack! You can enable it by going to " +
+                                   "Options> Texture Packs and choosing \"Pixelmon_us.zip\"<br /><br />" +
+                                   "Thank you for playing on our server!");
+        
         JPanel third = new JPanel(new GridLayout());
         third.add(new JPanel()); third.add(new JPanel()); third.add(close);
 
         getContentPane().add(finishedText);
-        getContentPane().add(new JPanel());
+        getContentPane().add(second);
         getContentPane().add(third);
         update();
     }
