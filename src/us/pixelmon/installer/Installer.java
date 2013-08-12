@@ -43,18 +43,16 @@ public class Installer {
             if (file.exists()) {
                 System.out.println("\"" + file.getName() + "\" already exists. Skipping it...");
                 
-                if (fileName.toLowerCase().contains("minecraft") &&
-                    fileName.toLowerCase().contains(".jar") &&
-                    !fileName.toLowerCase().contains("forge")) {
-                    this.descriptionToFile.put(FileDescription.MINECRAFTJAR, file);
+                if (fileName.equalsIgnoreCase("minecraft-launcher.jar")) {
+                    this.descriptionToFile.put(FileDescription.MINECRAFTLAUNCHER, file);
                 }
-                else if (fileName.toLowerCase().contains("minecraftforge-universal")) {
-                    this.descriptionToFile.put(FileDescription.MINECRAFTFORGEJAR, file);
+                else if (fileName.equalsIgnoreCase("minecraftforge-universal.jar")) {
+                    this.descriptionToFile.put(FileDescription.MINECRAFTFORGEUNIVERSAL, file);
                 }
-                else if (fileName.toLowerCase().contains("customnpcs")) {
+                else if (fileName.toLowerCase().contains("CustomNPCs_1.5.2.zip")) {
                     this.descriptionToFile.put(FileDescription.CUSTOMNPCSZIP, file);
                 }
-                else if (fileName.toLowerCase().contains("pixelmon")) {
+                else if (fileName.equalsIgnoreCase("Pixelmon-Install.zip")) {
                     this.descriptionToFile.put(FileDescription.PIXELMONINSTALLZIP, file);
                 }
                 
@@ -65,18 +63,16 @@ public class Installer {
                 System.out.println("Downloading " + url.toString() + "...");
                 URLDownload.download(url, file);
                 
-                if (fileName.toLowerCase().contains("minecraft") &&
-                    fileName.toLowerCase().contains(".jar") &&
-                    !fileName.toLowerCase().contains("forge")) {
-                    this.descriptionToFile.put(FileDescription.MINECRAFTJAR, file);
+                if (fileName.equalsIgnoreCase("minecraft-launcher.jar")) {
+                    this.descriptionToFile.put(FileDescription.MINECRAFTLAUNCHER, file);
                 }
-                else if (fileName.toLowerCase().contains("minecraftforge-universal")) {
-                    this.descriptionToFile.put(FileDescription.MINECRAFTFORGEJAR, file);
+                else if (fileName.equalsIgnoreCase("minecraftforge-universal.jar")) {
+                    this.descriptionToFile.put(FileDescription.MINECRAFTFORGEUNIVERSAL, file);
                 }
-                else if (fileName.toLowerCase().contains("customnpcs")) {
+                else if (fileName.toLowerCase().contains("CustomNPCs_1.5.2.zip")) {
                     this.descriptionToFile.put(FileDescription.CUSTOMNPCSZIP, file);
                 }
-                else if (fileName.toLowerCase().contains("pixelmon")) {
+                else if (fileName.equalsIgnoreCase("Pixelmon-Install.zip")) {
                     this.descriptionToFile.put(FileDescription.PIXELMONINSTALLZIP, file);
                 }
                 
@@ -122,7 +118,7 @@ public class Installer {
             }
         }
         
-        File downloadedJar = descriptionToFile.get(FileDescription.MINECRAFTJAR);
+        File downloadedJar = descriptionToFile.get(FileDescription.MINECRAFTLAUNCHER);
         Runtime r = Runtime.getRuntime();
         Process run = null;
         
@@ -178,7 +174,7 @@ public class Installer {
             }
             
             File mcJarOrig = new File(baseDir, ".minecraft/bin/minecraft.jar");
-            File mcForgeJar = descriptionToFile.get(FileDescription.MINECRAFTFORGEJAR);
+            File mcForgeJar = descriptionToFile.get(FileDescription.MINECRAFTFORGEUNIVERSAL);
             
             List<ZipEntry> toDelete = new ArrayList<ZipEntry>(1);
             toDelete.add(new ZipEntry("META-INF"));
@@ -284,23 +280,17 @@ public class Installer {
             File file = urlToFile.get(url);
             String fileName = file.getName();
             
-            if (fileName.toLowerCase().contains("minecraft") &&
-                fileName.toLowerCase().contains(".jar") &&
-                !fileName.toLowerCase().contains("forge")) {
-                pop.put(FileDescription.MINECRAFTJAR, file);
+            if (fileName.equalsIgnoreCase("minecraft-launcher.jar")) {
+                this.descriptionToFile.put(FileDescription.MINECRAFTLAUNCHER, file);
             }
-            else if (fileName.toLowerCase().contains("minecraftforge-universal")) {
-                pop.put(FileDescription.MINECRAFTFORGEJAR, file);
+            else if (fileName.equalsIgnoreCase("minecraftforge-universal.jar")) {
+                this.descriptionToFile.put(FileDescription.MINECRAFTFORGEUNIVERSAL, file);
             }
-            else if (fileName.toLowerCase().contains("customnpcs")) {
-                pop.put(FileDescription.CUSTOMNPCSZIP, file);
+            else if (fileName.toLowerCase().contains("CustomNPCs_1.5.2.zip")) {
+                this.descriptionToFile.put(FileDescription.CUSTOMNPCSZIP, file);
             }
-            else if (fileName.toLowerCase().contains("pixelmon") &&
-                     !fileName.toLowerCase().contains("_us")) {
-                pop.put(FileDescription.PIXELMONINSTALLZIP, file);
-            }
-            else if (fileName.toLowerCase().contains("pixelmon_us")) {
-                pop.put(FileDescription.CUSTOMTEXTUREPACK, file);
+            else if (fileName.equalsIgnoreCase("Pixelmon-Install.zip")) {
+                this.descriptionToFile.put(FileDescription.PIXELMONINSTALLZIP, file);
             }
         }
         

@@ -1,10 +1,10 @@
 package us.pixelmon.installer;
 
 public enum FileDescription {
-    MINECRAFTFORGEJAR("MinecraftForge", false, false, false),
-    MINECRAFTJAR("MinecraftJar", false, false, false),
+    MINECRAFTFORGEUNIVERSAL("MinecraftForgeUniversal", false, false, false),
+    MINECRAFTLAUNCHER("MinecraftLauncher", false, false, false),
     PIXELMONINSTALLZIP("PixelmonInstallZip", true, false, false), //needs to be extracted at .minecraft
-    PIXELMONMODZIP("PixelmonModZip", false, true, false), //this is the actual mod
+    //PIXELMONMODZIP("PixelmonModZip", false, true, false), //this is the actual mod
     CUSTOMNPCSZIP("CustomNPCsZip", false, true, false), //this one is a mod
     CUSTOMTEXTUREPACK("CustomTexturePack", false, false, false);
     
