@@ -14,6 +14,8 @@ import javax.swing.SwingWorker;
 import us.pixelmon.installer.Installer;
 
 public class InstallerFrame extends JFrame {
+    private static final long serialVersionUID = 1390402159643961362L;
+    
     private Installer installer;
     private GridLayout layout;
     public InstallerFrame(String title, Installer installer) {
@@ -23,7 +25,7 @@ public class InstallerFrame extends JFrame {
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(layout);
-        setSize(500, 400);
+        setSize(600, 500);
     }
 
     public void begin() {
@@ -34,10 +36,31 @@ public class InstallerFrame extends JFrame {
      * Draws the welcome screen
      */
     public void startWelcome() {
-        JLabel mainText = new JLabel("<html><h1><b>Welcome!</b></h1>This installer will automatically download " +
-                                     "all of the resources necessary for Pixelmon.us! It will also automatically patch " +
-                                     "your minecraft.jar. When this installer is done, you will be ready to log on " +
-                                     "to Pixelmon.us!</h3>");
+        JLabel mainText = null;
+        JButton launchMc = new JButton("<html>Launch Minecraft");
+        launchMc.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                installer.runMinecraft(true, true);
+                System.exit(0);
+            }
+        });
+        
+        if (installer.mcGameDirExists()) {
+            launchMc.setEnabled(true);
+            mainText = new JLabel("<html><h1><b>Welcome!</b></h1>You already have a .minecraft directory. If " +
+                                  "would like to run minecraft from here, click the \"Launch Minecraft\" " +
+                                  "button below.<br /><br />If you would like to patch your current " +
+                                  ".minecraft directory, click \"Continue\".");
+        }
+        else {
+            launchMc.setEnabled(false);
+            mainText = new JLabel("<html><h1><b>Welcome!</b></h1>This installer will automatically download " +
+                                   "all of the resources necessary for Pixelmon.us! It will also automatically patch " +
+                                   "your minecraft.jar. When this installer is done, you will be ready to log on " +
+                                   "to Pixelmon.us!</h3>");
+        }
+        
         JButton cont = new JButton("Continue");
         cont.addActionListener(new ActionListener() {
             @Override
@@ -50,8 +73,8 @@ public class InstallerFrame extends JFrame {
         JPanel third = new JPanel();
         third.setLayout(new GridLayout(1, 3));
         //1                         //2                     //3
-        third.add(new JPanel()); third.add(new JPanel()); third.add(cont);
-
+        third.add(launchMc); third.add(new JPanel()); third.add(cont);
+        
         //populate the grid; a little confusing to read
         getContentPane().add(mainText);
         getContentPane().add(new JPanel());
@@ -63,7 +86,8 @@ public class InstallerFrame extends JFrame {
      */
     public void startDownload() {
         clearAll();
-        final JLabel statusText = new JLabel("<html><center><b>Downloading Files...");
+        final JLabel statusText = new JLabel("<html><center><b>Downloading Files... This may take" +
+                                             " a while...");
 
         final JButton cont = new JButton("Continue");
         cont.addActionListener(new ActionListener() {
@@ -96,8 +120,7 @@ public class InstallerFrame extends JFrame {
                 progress.setString("Done!");
                 progress.setValue(100);
 
-                JPanel third = new JPanel();
-                third.setLayout(new GridLayout(1, 3));
+                JPanel third = new JPanel(new GridLayout(1, 3));
                 third.add(new JPanel()); third.add(new JPanel()); third.add(cont);
                 getContentPane().add(third);
             }
@@ -118,11 +141,13 @@ public class InstallerFrame extends JFrame {
             infoText = new JLabel("<html>Minecraft will now start. It should now be fully modded. Check " +
                                   "for the \"mods\" option once you get to the main screen after logging in." +
                                   " If you see it and it shows Pixelmon and CustomNPCs, we are done!");
+            
             proceed.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     proceed.setEnabled(false);
                     SwingWorker<Void, Void> runMc = new SwingWorker<Void, Void>() {
+                        
                         @Override
                         protected Void doInBackground() throws Exception {
                             installer.runMinecraft(true);
@@ -144,6 +169,7 @@ public class InstallerFrame extends JFrame {
                                   "download all necessary files before patching the jar with MinecraftForge. " +
                                   "<br /><br />When you get to the main Minecraft screen, exit Minecraft! If " +
                                   "the files necessary are already there, we will just proceed.");
+            
             proceed.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {

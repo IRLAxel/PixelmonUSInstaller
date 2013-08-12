@@ -20,22 +20,13 @@ public class Installer {
     private Map<FileDescription, File> descriptionToFile;
     private String configDir; //path in the jar
     private File downloadDir;
-    private File tmpDir;
-    private boolean runningFromGUI;
 
-    public Installer(File downloadDir, File tmpDir, boolean runningFromGUI) {
-        this (downloadDir, tmpDir);
-        this.runningFromGUI = runningFromGUI;
-    }
-
-    public Installer(File downloadDir, File tmpDir) {
+    public Installer(File downloadDir) {
         this.configDir = "config/";
         this.downloadDir = downloadDir;
-        this.tmpDir = tmpDir;
-        this.runningFromGUI = false;
         
         urlToFile = populateURLs();
-        descriptionToFile = new HashMap<FileDescription, File>();
+        descriptionToFile = populateDescToFile();
     }
     
     /**
@@ -106,6 +97,16 @@ public class Installer {
      * already exists 
      */
     public void runMinecraft(boolean runIfMcJarExists) {
+        runMinecraft(runIfMcJarExists, false);
+    }
+    
+    /**
+     * 
+     * @param runIfMcJarExists Whether to run minecraft even if .minecraft/minecraft.jar
+     * already exists 
+     * @param detach Whether to let this process run detached from the instance of this program
+     */
+    public void runMinecraft(boolean runIfMcJarExists, boolean detach) {
         String baseDir;
         if (Utils.isWindows()) {
             baseDir = System.getenv("APPDATA");
@@ -125,28 +126,44 @@ public class Installer {
         Runtime r = Runtime.getRuntime();
         Process run = null;
         
-        try {
-            run = r.exec("java -jar " + downloadedJar.getAbsolutePath());
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        Scanner runStd = new Scanner(run.getInputStream());
-        Scanner runErr = new Scanner (run.getErrorStream());
-        
-        while (true) {
-            if (runStd.hasNext()) {
-                System.out.println(runStd.nextLine());
+        if (detach) {
+            try {
+                if (Utils.isNix()) {
+                    run = r.exec("nohup java -jar " + downloadedJar.getAbsolutePath() + " &");
+                }
+                else {
+                    run = r.exec("java -jar " + downloadedJar.getAbsolutePath()); //not sure about windows?
+                }
             }
-            if (runErr.hasNext()) {
-                System.err.println(runErr.nextLine());
-            }
-            else {
-                break;
+            catch (IOException e) {
+                e.printStackTrace();
             }
         }
-        runStd.close();
-        runErr.close();
+        else {
+            try {
+                run = r.exec("java -jar " + downloadedJar.getAbsolutePath());
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+            
+            Scanner runStd = new Scanner(run.getInputStream());
+            Scanner runErr = new Scanner(run.getErrorStream());
+            
+            while (true) {
+                if (runStd.hasNext()) {
+                    System.out.println(runStd.nextLine());
+                }
+                if (runErr.hasNext()) {
+                    System.err.println(runErr.nextLine());
+                }
+                else {
+                    break;
+                }
+            }
+            runStd.close();
+            runErr.close();
+        }
     }
     
     public void patchMinecraftJar() {
@@ -263,8 +280,48 @@ public class Installer {
         s.close();
         return map;
     }
-
-    //getters
+    
+    private Map<FileDescription, File> populateDescToFile() {
+        Map<FileDescription, File> pop = new HashMap<FileDescription, File>();
+        
+        for (URL url : urlToFile.keySet()) {
+            File file = urlToFile.get(url);
+            String fileName = file.getName();
+            
+            if (file.exists()) {
+                if (fileName.toLowerCase().contains("minecraft") &&
+                    fileName.toLowerCase().contains(".jar") &&
+                    !fileName.toLowerCase().contains("forge")) {
+                    pop.put(FileDescription.MINECRAFTJAR, file);
+                }
+                else if (fileName.toLowerCase().contains("minecraftforge-universal")) {
+                    pop.put(FileDescription.MINECRAFTFORGEJAR, file);
+                }
+                else if (fileName.toLowerCase().contains("customnpcs")) {
+                    pop.put(FileDescription.CUSTOMNPCSZIP, file);
+                }
+                else if (fileName.toLowerCase().contains("pixelmon")) {
+                    pop.put(FileDescription.PIXELMONINSTALLZIP, file);
+                }
+                
+                continue;
+            }
+        }
+        
+        return pop;
+    }
+    
+    public boolean mcGameDirExists() {
+        String baseDir;
+        if (Utils.isWindows()) {
+            baseDir = System.getenv("APPDATA");
+        }
+        else {
+            baseDir = System.getenv("HOME");
+        }
+        File mcGameDir = new File(baseDir, ".minecraft");
+        return mcGameDir.exists();
+    }
 
     public Map<URL, File> getUrlToFile() {
         return urlToFile;
