@@ -176,17 +176,6 @@ public class Installer {
             else {
                 baseDir = System.getenv("HOME");
             }
-            /*TFile mcJarOrig = new TFile(baseDir, ".minecraft/bin/minecraft.jar");
-            TFile mcForgeJar = new TFile(descriptionToFile.get(FileDescription.MINECRAFTFORGEJAR));
-            
-            //delete META-INF from minecraft jar
-            new TFile(mcJarOrig, "META-INF").rm_r();
-
-            //patch the jar and overwrite
-            mcForgeJar.cp_r(mcJarOrig);
-
-            //update it all
-            TVFS.umount();*/
             
             File mcJarOrig = new File(baseDir, ".minecraft/bin/minecraft.jar");
             File mcForgeJar = descriptionToFile.get(FileDescription.MINECRAFTFORGEJAR);
@@ -234,8 +223,6 @@ public class Installer {
             
             if (desc.shouldExtractToRootMCDir()) {
                 try {
-//                    TFile zipToExtract = new TFile(jarOrZip);
-//                    zipToExtract.cp_rp(mcRootDir);
                     Utils.unzip(jarOrZip, mcRootDir);
                 }
                 catch (IOException e) {
@@ -272,7 +259,6 @@ public class Installer {
     private Map<URL, File> populateURLs() {
         Map<URL, File> map = new HashMap<URL, File>();
         
-        //Scanner for download.txt in the jar
         Scanner s = new Scanner(getClass().getClassLoader().getResourceAsStream(this.configDir + "downloads.txt"));
         
         while (s.hasNext()) {
