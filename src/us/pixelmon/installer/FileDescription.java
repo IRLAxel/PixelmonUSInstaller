@@ -1,28 +1,17 @@
 package us.pixelmon.installer;
 
 public enum FileDescription {
-    MINECRAFTFORGEJAR("MinecraftForge", false),
-    MINECRAFTJAR("MinecraftJar", false),
-    PIXELMONINSTALLZIP("PixelmonInstallZip", true), //needs to be extracted at .minecraft
-    PIXELMONMODZIP("PixelmonModZip", false, false), //this is the actual mod
-    CUSTOMNPCSZIP("CustomNPCsZip", false, false); //this one is a mod
+    MINECRAFTFORGEJAR("MinecraftForge", false, false, false),
+    MINECRAFTJAR("MinecraftJar", false, false, false),
+    PIXELMONINSTALLZIP("PixelmonInstallZip", true, false, false), //needs to be extracted at .minecraft
+    PIXELMONMODZIP("PixelmonModZip", false, true, false), //this is the actual mod
+    CUSTOMNPCSZIP("CustomNPCsZip", false, true, false), //this one is a mod
+    CUSTOMTEXTUREPACK("CustomTexturePack", false, false, false);
     
     private final String desc;
     private final boolean isMCForgeMod;
     private final boolean isMCForgeCoreMod;
     private final boolean extractToMCRoot;
-    
-    /**
-     * 
-     * @param desc The description of the jar file
-     * @param isMCForgeMod true if the zip is a mod, not a coremod
-     */
-    private FileDescription(String desc, boolean extractToMCRoot) {
-        this.desc = desc;
-        this.isMCForgeMod = false;
-        this.isMCForgeCoreMod = false;
-        this.extractToMCRoot = extractToMCRoot;
-    }
     
     /**
      * Use this constructor if the zip is a MCForge mod or coremod.
@@ -33,17 +22,11 @@ public enum FileDescription {
      * @param isMCForgeCoreMod true if the zip is a core mod,
      * not a regualar mod. If the zip is neither, use the other constructor
      */
-    private FileDescription(String desc, boolean extractToMCRoot, boolean isMCForgeCoreMod) {
+    private FileDescription(String desc, boolean extractToMCRoot, boolean isMCForgeMod, boolean isMCForgeCoreMod) {
         this.desc = desc;
         this.extractToMCRoot = extractToMCRoot;
-        if (isMCForgeCoreMod) {
-            this.isMCForgeCoreMod = true;
-            this.isMCForgeMod = false;
-        }
-        else {
-            this.isMCForgeCoreMod = false;
-            this.isMCForgeMod = true;
-        }
+        this.isMCForgeMod = isMCForgeMod;
+        this.isMCForgeCoreMod = isMCForgeCoreMod;
     }
     
     @Override

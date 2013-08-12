@@ -220,7 +220,7 @@ public class InstallerFrame extends JFrame {
             @Override
             protected Void doInBackground() throws Exception {
                 installer.patchMinecraftJar();
-                installer.addModsAndCoremods();
+                installer.addModsAndTextures();
                 initMinecraft(true);
 
                 return null;

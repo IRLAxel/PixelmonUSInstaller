@@ -205,11 +205,13 @@ public class Installer {
     /**
      * Call this AFTER you patch with patchMinecraftJar()
      */
-    public void addModsAndCoremods() {
+    public void addModsAndTextures() {
         File mcRootDir;
         File modsDir;
         File coremodsDir;
+        File texturePackDir;
         String baseDir;
+        
         if (Utils.isWindows()) {
             baseDir = System.getenv("APPDATA");
         }
@@ -219,6 +221,7 @@ public class Installer {
         mcRootDir = new File(baseDir, ".minecraft");
         modsDir = new File(mcRootDir, "mods");
         coremodsDir = new File(mcRootDir, "coremods");
+        texturePackDir = new File(mcRootDir, "texturepacks");
         
         if (!mcRootDir.exists()) {
             System.err.println("The folder " + mcRootDir.getAbsolutePath() + " doesn't exist.");
@@ -239,8 +242,7 @@ public class Installer {
                     e.printStackTrace();
                 }
             }
-            
-            if (desc.isMCForgeMod()) {
+            else if (desc.isMCForgeMod()) {
                 try {
                 Files.copy(jarOrZip.toPath(), new File(modsDir, jarOrZip.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
@@ -251,6 +253,14 @@ public class Installer {
             else if (desc.isMCForgeCoreMod()) {
                 try {
                     Files.copy(jarOrZip.toPath(), new File(coremodsDir, jarOrZip.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            else if (desc.getDesc().equals("CustomTexturePack")) {
+                try {
+                    Files.copy(jarOrZip.toPath(), new File(texturePackDir, jarOrZip.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
                 catch (IOException e) {
                     e.printStackTrace();
@@ -302,6 +312,9 @@ public class Installer {
                 }
                 else if (fileName.toLowerCase().contains("pixelmon")) {
                     pop.put(FileDescription.PIXELMONINSTALLZIP, file);
+                }
+                else if (fileName.toLowerCase().contains("Pixelmon_us")) {
+                    pop.put(FileDescription.CUSTOMTEXTUREPACK, file);
                 }
                 
                 continue;
