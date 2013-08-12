@@ -298,26 +298,23 @@ public class Installer {
             File file = urlToFile.get(url);
             String fileName = file.getName();
             
-            if (file.exists()) {
-                if (fileName.toLowerCase().contains("minecraft") &&
-                    fileName.toLowerCase().contains(".jar") &&
-                    !fileName.toLowerCase().contains("forge")) {
-                    pop.put(FileDescription.MINECRAFTJAR, file);
-                }
-                else if (fileName.toLowerCase().contains("minecraftforge-universal")) {
-                    pop.put(FileDescription.MINECRAFTFORGEJAR, file);
-                }
-                else if (fileName.toLowerCase().contains("customnpcs")) {
-                    pop.put(FileDescription.CUSTOMNPCSZIP, file);
-                }
-                else if (fileName.toLowerCase().contains("pixelmon")) {
-                    pop.put(FileDescription.PIXELMONINSTALLZIP, file);
-                }
-                else if (fileName.toLowerCase().contains("Pixelmon_us")) {
-                    pop.put(FileDescription.CUSTOMTEXTUREPACK, file);
-                }
-                
-                continue;
+            if (fileName.toLowerCase().contains("minecraft") &&
+                fileName.toLowerCase().contains(".jar") &&
+                !fileName.toLowerCase().contains("forge")) {
+                pop.put(FileDescription.MINECRAFTJAR, file);
+            }
+            else if (fileName.toLowerCase().contains("minecraftforge-universal")) {
+                pop.put(FileDescription.MINECRAFTFORGEJAR, file);
+            }
+            else if (fileName.toLowerCase().contains("customnpcs")) {
+                pop.put(FileDescription.CUSTOMNPCSZIP, file);
+            }
+            else if (fileName.toLowerCase().contains("pixelmon") &&
+                     !fileName.toLowerCase().contains("_us")) {
+                pop.put(FileDescription.PIXELMONINSTALLZIP, file);
+            }
+            else if (fileName.toLowerCase().contains("pixelmon_us")) {
+                pop.put(FileDescription.CUSTOMTEXTUREPACK, file);
             }
         }
         
