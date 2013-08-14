@@ -1,5 +1,7 @@
-http://files.minecraftforge.net/minecraftforge/minecraftforge-universal-1.6.2-9.10.0.804.jar minecraftforge-universal.jar
+http://files.minecraftforge.net/minecraftforge/minecraftforge-installer-1.6.2-9.10.0.804.jar minecraftforge-installer.jar
 https://s3.amazonaws.com/Minecraft.Download/launcher/Minecraft.jar minecraft-launcher.jar
+http://pixelmon.us/wp-content/uploads/2013/06/Pixelmon_us.zip pixelmonus-texturepack.zip
+
+# Need to update CustomNPCs and Pixelmon to 1.6.2
 http://pixelmon.us/wp-content/uploads/2013/07/Pixelmon%202.2.1%20Install.zip Pixelmon-Install.zip
 https://dl.dropbox.com/u/3096920/minecraft/CustomNPCs_1.5.2.zip CustomNPCs_1.5.2.zip
-http://pixelmon.us/wp-content/uploads/2013/06/Pixelmon_us.zip pixelmonus-texturepack.zip
