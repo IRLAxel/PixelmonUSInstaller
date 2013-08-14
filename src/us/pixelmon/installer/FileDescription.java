@@ -1,7 +1,7 @@
 package us.pixelmon.installer;
 
 public enum FileDescription {
-    MINECRAFTFORGEUNIVERSAL("MinecraftForgeUniversal", false, false, false),
+    MINECRAFTFORGEINSTALLER("MinecraftForgeInstaller", false, false, false),
     MINECRAFTLAUNCHER("MinecraftLauncher", false, false, false),
     PIXELMONINSTALLZIP("PixelmonInstallZip", true, false, false), //needs to be extracted at .minecraft
     //PIXELMONMODZIP("PixelmonModZip", false, true, false), //this is the actual mod

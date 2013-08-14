@@ -52,9 +52,12 @@ public class Utils {
             }
             else {
                 if (!sub.delete()) {
-                    throw new IOException();
+                    throw new IOException("Could not delete " + sub.getAbsolutePath());
                 }
             }
+        }
+        if (!toDelete.delete()) {
+            throw new IOException("Could not delete " + toDelete.getAbsolutePath());
         }
     }
     

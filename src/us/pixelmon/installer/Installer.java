@@ -1,29 +1,32 @@
 package us.pixelmon.installer;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.zip.ZipEntry;
 
 import us.pixelmon.installer.util.Utils;
 
 public class Installer {
+    public static String mcVersion;
     private Map<URL, File> urlToFile;
     private Map<FileDescription, File> descriptionToFile;
     private String configDir; //path in the jar
     private File downloadDir;
+    private File mcGameJar;
 
     public Installer(File downloadDir) {
         this.configDir = "config/";
         this.downloadDir = downloadDir;
+        this.mcGameJar = new File(getMcRootDir(), "versions/" + Installer.mcVersion + "/" + Installer.mcVersion + ".jar");
+        mcVersion = parseVersion();
         
         urlToFile = populateURLs();
         descriptionToFile = populateDescToFile();
@@ -46,8 +49,8 @@ public class Installer {
                 if (fileName.equalsIgnoreCase("minecraft-launcher.jar")) {
                     this.descriptionToFile.put(FileDescription.MINECRAFTLAUNCHER, file);
                 }
-                else if (fileName.equalsIgnoreCase("minecraftforge-universal.jar")) {
-                    this.descriptionToFile.put(FileDescription.MINECRAFTFORGEUNIVERSAL, file);
+                else if (fileName.equalsIgnoreCase("minecraftforge-installer.jar")) {
+                    this.descriptionToFile.put(FileDescription.MINECRAFTFORGEINSTALLER, file);
                 }
                 else if (fileName.toLowerCase().contains("CustomNPCs_1.5.2.zip")) {
                     this.descriptionToFile.put(FileDescription.CUSTOMNPCSZIP, file);
@@ -66,8 +69,8 @@ public class Installer {
                 if (fileName.equalsIgnoreCase("minecraft-launcher.jar")) {
                     this.descriptionToFile.put(FileDescription.MINECRAFTLAUNCHER, file);
                 }
-                else if (fileName.equalsIgnoreCase("minecraftforge-universal.jar")) {
-                    this.descriptionToFile.put(FileDescription.MINECRAFTFORGEUNIVERSAL, file);
+                else if (fileName.equalsIgnoreCase("minecraftforge-installer.jar")) {
+                    this.descriptionToFile.put(FileDescription.MINECRAFTFORGEINSTALLER, file);
                 }
                 else if (fileName.toLowerCase().contains("CustomNPCs_1.5.2.zip")) {
                     this.descriptionToFile.put(FileDescription.CUSTOMNPCSZIP, file);
@@ -103,33 +106,27 @@ public class Installer {
      * @param detach Whether to let this process run detached from the instance of this program
      */
     public void runMinecraft(boolean runIfMcJarExists, boolean detach) {
-        String baseDir;
-        if (Utils.isWindows()) {
-            baseDir = System.getenv("APPDATA");
-        }
-        else {
-            baseDir = System.getenv("HOME");
-        }
-        File mcGameJar = new File(baseDir, ".minecraft/bin/minecraft.jar");
         if (!runIfMcJarExists) {
             if (mcGameJar.exists()) {
-                System.out.println("No need to run minecraft.jar launcher; it has already been run successfully!");
+                System.out.println("No need to run minecraft launcher; it has already been run successfully!");
                 return;
             }
         }
         
-        File downloadedJar = descriptionToFile.get(FileDescription.MINECRAFTLAUNCHER);
-        Runtime r = Runtime.getRuntime();
+        File minecraftLauncher = descriptionToFile.get(FileDescription.MINECRAFTLAUNCHER);
         Process run = null;
+        ProcessBuilder proc = null;
         
         if (detach) {
             try {
                 if (Utils.isNix()) {
-                    run = r.exec("nohup java -jar " + downloadedJar.getAbsolutePath() + " &");
+                    proc = new ProcessBuilder("nohup", "java", "-jar", minecraftLauncher.getAbsolutePath(), " &");
                 }
                 else {
-                    run = r.exec("java -jar " + downloadedJar.getAbsolutePath()); //not sure about windows?
+                    proc = new ProcessBuilder("java", "-jar", minecraftLauncher.getAbsolutePath());
                 }
+                proc.redirectErrorStream(true);
+                run = proc.start();
             }
             catch (IOException e) {
                 e.printStackTrace();
@@ -137,53 +134,54 @@ public class Installer {
         }
         else {
             try {
-                run = r.exec("java -jar " + downloadedJar.getAbsolutePath());
+                proc = new ProcessBuilder("java", "-jar", minecraftLauncher.getAbsolutePath());
+                run = proc.start();
+                BufferedReader br = new BufferedReader(new InputStreamReader(run.getInputStream()));
+                
+                String line = null;
+                while ((line = br.readLine()) != null) {
+                    System.out.println(line);
+                }
+                br.close();
             }
             catch (IOException e) {
                 e.printStackTrace();
             }
-            
-            Scanner runStd = new Scanner(run.getInputStream());
-            Scanner runErr = new Scanner(run.getErrorStream());
-            
-            while (true) {
-                if (runStd.hasNext()) {
-                    System.out.println(runStd.nextLine());
-                }
-                if (runErr.hasNext()) {
-                    System.err.println(runErr.nextLine());
-                }
-                else {
-                    break;
-                }
-            }
-            runStd.close();
-            runErr.close();
         }
     }
     
+    /**
+     * runs the Minecraft Forge installer jar
+     */
     public void patchMinecraftJar() {
-        System.out.println("Patching minecraft.jar...");
+        System.out.println("Starting Forge installer...");
+        
+        Runtime r = Runtime.getRuntime();
+        
+        Scanner normal = null;
+        Scanner error = null;
         try {
-            String baseDir;
-            if (Utils.isWindows()) {
-                baseDir = System.getenv("APPDATA");
+            File forgeInstaller = descriptionToFile.get(FileDescription.MINECRAFTFORGEINSTALLER);
+            
+            Process runForgeInstaller = r.exec("java -jar " + forgeInstaller.getAbsolutePath());
+            normal = new Scanner(runForgeInstaller.getInputStream());
+            error = new Scanner(runForgeInstaller.getErrorStream());
+            
+            while (normal.hasNext() || error.hasNext()) {
+                if (normal.hasNext()) {
+                    System.out.println(normal.nextLine());
+                }
+                if (error.hasNext()) {
+                    System.err.println(error.nextLine());
+                }
             }
-            else {
-                baseDir = System.getenv("HOME");
-            }
-            
-            File mcJarOrig = new File(baseDir, ".minecraft/bin/minecraft.jar");
-            File mcForgeJar = descriptionToFile.get(FileDescription.MINECRAFTFORGEUNIVERSAL);
-            
-            List<ZipEntry> toDelete = new ArrayList<ZipEntry>(1);
-            toDelete.add(new ZipEntry("META-INF"));
-            
-            Utils.deleteEntriesFromZip(mcJarOrig, toDelete);
-            Utils.zip_cp_r(mcForgeJar, mcJarOrig);
-        }
+        } 
         catch (IOException e) {
             e.printStackTrace();
+        }
+        finally {
+            normal.close();
+            error.close();
         }
     }
     
@@ -252,6 +250,24 @@ public class Installer {
         }
     }
     
+    private String parseVersion() {
+        Scanner s = new Scanner(getClass().getClassLoader().getResourceAsStream(this.configDir + "version.txt"));
+        
+        while (s.hasNext()) {
+            String potential = s.nextLine();
+            if (potential.startsWith("version")) {
+                s.close();
+                return potential.split("=")[1].trim();
+            }
+            else {
+                continue;
+            }
+        }
+        s.close();
+        System.err.println("Could not find the minecraft version in " + this.configDir + "version.txt");
+        return null;
+    }
+    
     private Map<URL, File> populateURLs() {
         Map<URL, File> map = new HashMap<URL, File>();
         
@@ -259,6 +275,10 @@ public class Installer {
         
         while (s.hasNext()) {
             String line = s.nextLine();
+            
+            //ignore "#" comment lines
+            if (line.startsWith("#") || line.equalsIgnoreCase("") || line == null) continue;
+            
             try {
                 URL url = new URL(line.split(" ")[0]);
                 File fileName = new File(downloadDir, line.split(" ")[1].trim());
@@ -281,23 +301,28 @@ public class Installer {
             String fileName = file.getName();
             
             if (fileName.equalsIgnoreCase("minecraft-launcher.jar")) {
-                this.descriptionToFile.put(FileDescription.MINECRAFTLAUNCHER, file);
+                pop.put(FileDescription.MINECRAFTLAUNCHER, file);
             }
-            else if (fileName.equalsIgnoreCase("minecraftforge-universal.jar")) {
-                this.descriptionToFile.put(FileDescription.MINECRAFTFORGEUNIVERSAL, file);
+            else if (fileName.equalsIgnoreCase("minecraftforge-installer.jar")) {
+                pop.put(FileDescription.MINECRAFTFORGEINSTALLER, file);
             }
             else if (fileName.toLowerCase().contains("CustomNPCs_1.5.2.zip")) {
-                this.descriptionToFile.put(FileDescription.CUSTOMNPCSZIP, file);
+                pop.put(FileDescription.CUSTOMNPCSZIP, file);
             }
             else if (fileName.equalsIgnoreCase("Pixelmon-Install.zip")) {
-                this.descriptionToFile.put(FileDescription.PIXELMONINSTALLZIP, file);
+                pop.put(FileDescription.PIXELMONINSTALLZIP, file);
             }
         }
         
         return pop;
     }
     
-    public boolean mcGameDirExists() {
+    /**
+     * True if a .minecraft folder is found and it is a post 1.6.2 minecraft directory
+     * with a "versions" folder. Post 1.6.2 installations don't have this folder.
+     * @return
+     */
+    public boolean currentMcGameDirExists() {
         String baseDir;
         if (Utils.isWindows()) {
             baseDir = System.getenv("APPDATA");
@@ -305,11 +330,31 @@ public class Installer {
         else {
             baseDir = System.getenv("HOME");
         }
+        
         File mcGameDir = new File(baseDir, ".minecraft");
-        return mcGameDir.exists();
+        File versions = new File(mcGameDir, "versions");
+        
+        return mcGameDir.exists() && versions.exists();
+        
     }
 
     public Map<URL, File> getUrlToFile() {
         return urlToFile;
+    }
+    
+    public File getMcRootDir() {
+        String baseDir;
+        if (Utils.isWindows()) {
+            baseDir = System.getenv("APPDATA");
+        }
+        else {
+            baseDir = System.getenv("HOME");
+        }
+        
+        return new File(baseDir, ".minecraft");
+    }
+    
+    public File getMcGameJar() {
+        return this.mcGameJar;
     }
 }
