@@ -42,7 +42,6 @@ public class InstallerFrame extends JFrame {
         JLabel mainText = null;
         JButton launchMc = new JButton("<html>Launch Minecraft");
         final JButton cont = new JButton("Continue");
-        cont.setEnabled(false);
         launchMc.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -59,6 +58,7 @@ public class InstallerFrame extends JFrame {
                                   ".minecraft directory, click \"Continue\".");
         }
         else {
+            cont.setEnabled(false);
             SwingWorker<Void, Void> dialog = new SwingWorker<Void, Void>() {
 
                 @Override
@@ -177,9 +177,10 @@ public class InstallerFrame extends JFrame {
         final JLabel infoText;
         final JButton proceed = new JButton("<html>Proceed/Run Minecraft");
         if (alreadyPatched) {
-            infoText = new JLabel("<html>Minecraft will now start. It should now be fully modded. Check " +
-                                  "for the \"mods\" option once you get to the main screen after logging in." +
-                                  " If you see it and it shows Pixelmon and CustomNPCs, we are done!");
+            infoText = new JLabel("<html>Minecraft will now start. It should now be fully modded. Be sure to change" +
+                                  " select \"Forge\" as your profile in the bottom left once minecraft starts. Check " +
+                                  "for the \"mods\" option once you get to the main game screen after logging in." +
+                                  " If you it shows Pixelmon and CustomNPCs, we are done!");
             
             proceed.addActionListener(new ActionListener() {
                 @Override

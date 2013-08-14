@@ -1,9 +1,7 @@
 package us.pixelmon.installer;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -25,8 +23,8 @@ public class Installer {
     public Installer(File downloadDir) {
         this.configDir = "config/";
         this.downloadDir = downloadDir;
-        this.mcGameJar = new File(getMcRootDir(), "versions/" + Installer.mcVersion + "/" + Installer.mcVersion + ".jar");
         mcVersion = parseVersion();
+        this.mcGameJar = new File(getMcRootDir(), "versions/" + Installer.mcVersion + "/" + Installer.mcVersion + ".jar");
         
         urlToFile = populateURLs();
         descriptionToFile = populateDescToFile();
@@ -114,7 +112,6 @@ public class Installer {
         }
         
         File minecraftLauncher = descriptionToFile.get(FileDescription.MINECRAFTLAUNCHER);
-        Process run = null;
         ProcessBuilder proc = null;
         
         if (detach) {
@@ -125,25 +122,18 @@ public class Installer {
                 else {
                     proc = new ProcessBuilder("java", "-jar", minecraftLauncher.getAbsolutePath());
                 }
-                proc.redirectErrorStream(true);
-                run = proc.start();
+                proc.start();
             }
             catch (IOException e) {
                 e.printStackTrace();
             }
         }
         else {
+            proc = new ProcessBuilder("java", "-jar", minecraftLauncher.getAbsolutePath());
+            proc.inheritIO();
             try {
-                proc = new ProcessBuilder("java", "-jar", minecraftLauncher.getAbsolutePath());
-                run = proc.start();
-                BufferedReader br = new BufferedReader(new InputStreamReader(run.getInputStream()));
-                
-                String line = null;
-                while ((line = br.readLine()) != null) {
-                    System.out.println(line);
-                }
-                br.close();
-            }
+                proc.start();
+            } 
             catch (IOException e) {
                 e.printStackTrace();
             }
@@ -156,32 +146,14 @@ public class Installer {
     public void patchMinecraftJar() {
         System.out.println("Starting Forge installer...");
         
-        Runtime r = Runtime.getRuntime();
-        
-        Scanner normal = null;
-        Scanner error = null;
+        ProcessBuilder proc = new ProcessBuilder("java", "-jar", 
+                       descriptionToFile.get(FileDescription.MINECRAFTFORGEINSTALLER).getAbsolutePath());
+        proc.inheritIO();
         try {
-            File forgeInstaller = descriptionToFile.get(FileDescription.MINECRAFTFORGEINSTALLER);
-            
-            Process runForgeInstaller = r.exec("java -jar " + forgeInstaller.getAbsolutePath());
-            normal = new Scanner(runForgeInstaller.getInputStream());
-            error = new Scanner(runForgeInstaller.getErrorStream());
-            
-            while (normal.hasNext() || error.hasNext()) {
-                if (normal.hasNext()) {
-                    System.out.println(normal.nextLine());
-                }
-                if (error.hasNext()) {
-                    System.err.println(error.nextLine());
-                }
-            }
+            proc.start();
         } 
         catch (IOException e) {
             e.printStackTrace();
-        }
-        finally {
-            normal.close();
-            error.close();
         }
     }
     
